@@ -9,9 +9,10 @@ import type { User } from '../../../server/src/schema';
 interface UserLoginProps {
   users: User[];
   onLogin: (user: User) => void;
+  isLoading?: boolean;
 }
 
-export function UserLogin({ users, onLogin }: UserLoginProps) {
+export function UserLogin({ users, onLogin, isLoading = false }: UserLoginProps) {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
 
   const handleLogin = () => {
@@ -32,14 +33,20 @@ export function UserLogin({ users, onLogin }: UserLoginProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {users.length === 0 ? (
+          {isLoading || users.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">
-                Memuat data pengguna...
+                {isLoading ? 'Menghubungi server...' : 'Memuat data pengguna...'}
               </p>
               <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
               </div>
+              {isLoading && (
+                <p className="text-xs text-gray-400 mt-4">
+                  Jika server tidak merespons dalam 5 detik, aplikasi akan beralih ke mode demo
+                </p>
+              )}
             </div>
           ) : (
             <>

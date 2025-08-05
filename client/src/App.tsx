@@ -15,6 +15,7 @@ function App() {
   const [forklifts, setForklifts] = useState<Forklift[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Create demo data for when the backend is not available
   const createDemoData = useCallback(() => {
@@ -78,16 +79,27 @@ function App() {
     setUsers(demoUsers);
     setForklifts(demoForklifts);
     setIsConnected(false);
-    setError('Server tidak tersedia - menggunakan data demo');
+    setError('Server tidak merespons - beralih ke mode demo untuk pengalaman yang lebih cepat');
   }, []);
 
   const loadInitialData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      // Try to load real data from the server
-      const [usersData, forkliftsData] = await Promise.all([
-        trpc.getUsers.query(),
-        trpc.getForklifts.query()
-      ]);
+      // Create a timeout promise that rejects after 5 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Server timeout - switching to demo mode'));
+        }, 5000); // 5 second timeout
+      });
+
+      // Race between data loading and timeout
+      const [usersData, forkliftsData] = await Promise.race([
+        Promise.all([
+          trpc.getUsers.query(),
+          trpc.getForklifts.query()
+        ]),
+        timeoutPromise
+      ]) as [User[], Forklift[]];
       
       // If we get data (even empty arrays), the server is working
       setUsers(usersData);
@@ -95,8 +107,10 @@ function App() {
       setIsConnected(true);
       setError(null);
     } catch (error) {
-      console.warn('Server not available, using demo data:', error);
+      console.warn('Server not available or timeout, using demo data:', error);
       createDemoData();
+    } finally {
+      setIsLoading(false);
     }
   }, [createDemoData]);
 
@@ -123,7 +137,7 @@ function App() {
             </div>
           </div>
         )}
-        <UserLogin users={users} onLogin={setCurrentUser} />
+        <UserLogin users={users} onLogin={setCurrentUser} isLoading={isLoading} />
       </div>
     );
   }
