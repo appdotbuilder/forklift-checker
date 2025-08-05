@@ -1,16 +1,24 @@
 
+import { db } from '../db';
+import { checklistItemsTable } from '../db/schema';
 import { type CreateChecklistItemInput, type ChecklistItem } from '../schema';
 
 export const createChecklistItem = async (input: CreateChecklistItemInput): Promise<ChecklistItem> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating new checklist items that will be used
-    // during daily inspections. Items are categorized (e.g., "Engine", "Hydraulics", "Safety").
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Insert checklist item record
+    const result = await db.insert(checklistItemsTable)
+      .values({
         category: input.category,
         item_name: input.item_name,
         description: input.description,
-        is_active: input.is_active,
-        created_at: new Date() // Placeholder date
-    } as ChecklistItem);
+        is_active: input.is_active
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Checklist item creation failed:', error);
+    throw error;
+  }
 };

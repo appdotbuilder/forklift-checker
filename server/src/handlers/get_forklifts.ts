@@ -1,10 +1,27 @@
 
+import { db } from '../db';
+import { forkliftsTable } from '../db/schema';
 import { type Forklift, type GetForkliftStatusInput } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const getForklifts = async (input?: GetForkliftStatusInput): Promise<Forklift[]> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all forklifts from the database,
-    // with optional filtering by status (active, maintenance, inactive).
-    // Used by operators to see available forklifts and supervisors to monitor fleet status.
-    return [];
+  try {
+    // Apply status filter if provided
+    if (input?.status) {
+      const results = await db.select()
+        .from(forkliftsTable)
+        .where(eq(forkliftsTable.status, input.status))
+        .execute();
+      return results;
+    }
+
+    // Return all forklifts if no filter
+    const results = await db.select()
+      .from(forkliftsTable)
+      .execute();
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch forklifts:', error);
+    throw error;
+  }
 };
